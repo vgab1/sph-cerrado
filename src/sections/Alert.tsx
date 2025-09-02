@@ -3,31 +3,32 @@ export default function Alert() {
     {
       icon: "✅",
       title: "Normal",
-      color: "green",
+      border: "border-b-4 border-green-400",
+      text: "text-green-700",
       description: "Condições de umidade adequadas para a época.",
     },
     {
       icon: "⚠️",
       title: "Atenção",
-      color: "yellow",
+      border: "border-b-4 border-yellow-400",
+      text: "text-yellow-700",
       description: "Solos mais secos que o normal. Risco de estresse hídrico.",
     },
     {
       icon: "🔥",
       title: "Alerta",
-      color: "orange",
+      border: "border-b-4 border-orange-400",
+      text: "text-orange-700",
       description: "Seca moderada. Risco de incêndios e perdas agrícolas.",
     },
     {
       icon: "🚨",
       title: "Emergência",
-      color: "red",
+      border: "border-b-4 border-red-500",
+      text: "text-red-700",
       description: "Seca severa. Racionamento pode ser necessário.",
     },
   ];
-
-  const borderColor = (color: string) => `border-b-4 border-${color}-400`;
-  const textColor = (color: string) => `text-${color}-700`;
 
   return (
     <section
@@ -48,14 +49,10 @@ export default function Alert() {
         {alertData.map((alert) => (
           <div
             key={alert.title}
-            className={`alert-card bg-white p-6 rounded-lg shadow-md ${borderColor(
-              alert.color
-            )}`}
+            className={`alert-card bg-white p-6 rounded-lg shadow-md transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg ${alert.border}`}
           >
             <p className="text-2xl mb-2">{alert.icon}</p>
-            <p className={`font-bold ${textColor(alert.color)}`}>
-              {alert.title}
-            </p>
+            <p className={`font-bold ${alert.text}`}>{alert.title}</p>
             <p className="text-xs text-gray-500 mt-1">{alert.description}</p>
           </div>
         ))}

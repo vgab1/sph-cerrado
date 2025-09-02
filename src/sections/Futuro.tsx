@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Chart,
   CategoryScale,
@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
 
 Chart.register(
   CategoryScale,
@@ -15,7 +16,8 @@ Chart.register(
   LineElement,
   PointElement,
   Tooltip,
-  Legend
+  Legend,
+  annotationPlugin
 );
 
 type TimeSeriesData = {
@@ -34,17 +36,24 @@ type ForecastProps = {
 
 export default function Futuro({ reportData }: ForecastProps) {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
+  const forecastChartInstanceRef = useRef<Chart | null>(null);
+
   const [chartVisible, setChartVisible] = useState(false);
-  let forecastChartInstance: Chart | null = null;
+  const [summaryHTML, setSummaryHTML] = useState(
+    "Selecione um cenário para iniciar a simulação."
+  );
+  const [selectedScenario, setSelectedScenario] = useState<
+    "dry" | "normal" | "wet" | null
+  >(null);
 
   const runForecastSimulation = (scenario: "dry" | "normal" | "wet") => {
-    setChartVisible(true); // Mostrar gráfico ao clicar
+    setSelectedScenario(scenario);
+    setChartVisible(true);
+  };
 
-    if (!chartRef.current) return;
-    const summaryElement = document.getElementById("simulationSummary");
-    if (!summaryElement) return;
+  useEffect(() => {
+    if (!chartVisible || !selectedScenario || !chartRef.current) return;
 
-    // --- lógica da simulação ---
     const historicalMoisture = reportData.timeSeries.map(
       (d) => d.soil_moisture
     );
@@ -64,9 +73,9 @@ export default function Futuro({ reportData }: ForecastProps) {
     });
 
     let precipScenario = [...monthlyPrecipAvg];
-    if (scenario === "dry")
+    if (selectedScenario === "dry")
       precipScenario = monthlyPrecipAvg.map((p) => p * 0.7);
-    else if (scenario === "wet")
+    else if (selectedScenario === "wet")
       precipScenario = monthlyPrecipAvg.map((p) => p * 1.3);
 
     let lastMoisture =
@@ -104,9 +113,10 @@ export default function Futuro({ reportData }: ForecastProps) {
     const ctx = chartRef.current.getContext("2d");
     if (!ctx) return;
 
-    if (forecastChartInstance) forecastChartInstance.destroy();
+    if (forecastChartInstanceRef.current)
+      forecastChartInstanceRef.current.destroy();
 
-    forecastChartInstance = new Chart(ctx, {
+    forecastChartInstanceRef.current = new Chart(ctx, {
       type: "line",
       data: {
         labels: forecastLabels,
@@ -133,17 +143,48 @@ export default function Futuro({ reportData }: ForecastProps) {
             max: 0.45,
           },
         },
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          annotation: {
+            annotations: {
+              emergency: {
+                type: "box",
+                yMin: 0.1,
+                yMax: p10,
+                backgroundColor: "rgba(239, 68, 68, 0.2)",
+              },
+              alert: {
+                type: "box",
+                yMin: p10,
+                yMax: p20,
+                backgroundColor: "rgba(249, 115, 22, 0.2)",
+              },
+              attention: {
+                type: "box",
+                yMin: p20,
+                yMax: p30,
+                backgroundColor: "rgba(234, 179, 8, 0.2)",
+              },
+              normal: {
+                type: "box",
+                yMin: p30,
+                yMax: 0.45,
+                backgroundColor: "rgba(34, 197, 94, 0.1)",
+              },
+            },
+          },
+        },
       },
     });
 
-    summaryElement.innerHTML = `No <span class="font-bold">${
-      scenario === "dry"
-        ? "Cenário Seco"
-        : scenario === "wet"
-        ? "Cenário Chuvoso"
-        : "Cenário Normal"
-    }</span>, o sistema entraria em estado de 
+    setSummaryHTML(
+      `No <span class="font-bold">${
+        selectedScenario === "dry"
+          ? "Cenário Seco"
+          : selectedScenario === "wet"
+          ? "Cenário Chuvoso"
+          : "Cenário Normal"
+      }</span>, o sistema entraria em estado de 
       <span class="text-yellow-600 font-bold">Atenção por ${
         alertCounts.attention
       } meses</span>, 
@@ -152,8 +193,9 @@ export default function Futuro({ reportData }: ForecastProps) {
       } meses</span> e 
       <span class="text-red-600 font-bold">Emergência por ${
         alertCounts.emergency
-      } meses</span> ao longo dos próximos 3 anos.`;
-  };
+      } meses</span> ao longo dos próximos 3 anos.`
+    );
+  }, [chartVisible, selectedScenario, reportData]);
 
   return (
     <section
@@ -202,11 +244,11 @@ export default function Futuro({ reportData }: ForecastProps) {
           </div>
         )}
 
-        <div id="simulationSummary" className="mt-4 text-center font-semibold">
-          {!chartVisible && (
-            <p>Selecione um cenário para iniciar a simulação.</p>
-          )}
-        </div>
+        <div
+          id="simulationSummary"
+          className="mt-4 text-center font-semibold"
+          dangerouslySetInnerHTML={{ __html: summaryHTML }}
+        />
       </div>
     </section>
   );

@@ -79,10 +79,10 @@ export default function Analise({ reportData }: AnaliseDeDadosProps) {
     const options = {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: "index", intersect: false },
+      interaction: { mode: "index" as const, intersect: false },
       plugins: {
-        tooltip: { enabled: true, mode: "index", intersect: false },
-        legend: { position: "top" },
+        tooltip: { enabled: true, mode: "index" as const, intersect: false },
+        legend: { position: "top" as const },
       },
       scales: {
         y: {

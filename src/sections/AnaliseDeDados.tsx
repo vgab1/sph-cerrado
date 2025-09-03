@@ -86,15 +86,15 @@ export default function Analise({ reportData }: AnaliseDeDadosProps) {
       },
       scales: {
         y: {
-          type: "linear",
+          type: "linear" as const,
           display: true,
-          position: "left",
+          position: "left" as const,
           title: { display: true, text: "Precipitação (mm)", color: "#2981F6" },
         },
         y1: {
-          type: "linear",
+          type: "linear" as const,
           display: true,
-          position: "right",
+          position: "right" as const,
           title: { display: true, text: "NDVI", color: "#8FBC8F" },
           grid: { drawOnChartArea: false },
         },
